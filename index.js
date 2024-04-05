@@ -1,53 +1,73 @@
 const express = require("express");
 const ical = require("ical-generator");
 const dotenv = require("dotenv").config();
-const { ClientCredentials } = require("simple-oauth2");
-const { getCampusCalendar } = require("./calendar.js");
+const { getCampusEvents } = require("./events.js");
 const { campuses, cursuses } = require("./config.js");
-
-const config = {
-	client: {
-		id: process.env.CLIENT_ID,
-		secret: process.env.CLIENT_SECRET,
-	},
-	auth: {
-		tokenHost: "https://api.intra.42.fr",
-		tokenPath: "/oauth/token",
-		authorizePath: "/oauth/authorize",
-	},
-};
-const client = new ClientCredentials(config);
+const { getCampusTigs } = require("./tig.js");
+const { getCampusExams } = require("./exam.js");
 
 let calendars = {};
 
 for (const campus of campuses) {
+	function withCampusPrefix(title) {
+		return `Intra ${campus.name} | ${title}`;
+	}
+
 	calendars[campus.id] = {};
-	for (const cursus of cursuses) {
-		calendars[campus.id][cursus.id] = ical({
-			name: `Intra ${campus.name} | ${cursus.name}`,
+
+	if (campus.calendars.tig) {
+		calendars[campus.id]["tig"] = ical({ name: withCampusPrefix("TIG") });
+	}
+	if (campus.calendars.exam)
+		calendars[campus.id]["exam"] = ical({
+			name: withCampusPrefix("Exams"),
+		});
+	for (const cursus of campus.calendars.cursuses) {
+		calendars[campus.id][cursus] = ical({
+			name: withCampusPrefix(cursuses.get(cursus)),
 		});
 	}
 }
 
+const UPDATE_TIMEOUT = 10 * 60 * 1000;
+
 campuses.forEach((campus, index) => {
-	cursuses.forEach((cursus, index) => {
+	campus.calendars.cursuses.forEach((cursus, index) => {
 		setTimeout(() => {
-			getCampusCalendar(
-				client,
-				calendars[campus.id][cursus.id],
+			const cursusDetails = { id: cursus, name: cursuses.get(cursus) };
+			getCampusEvents(
+				calendars[campus.id][cursus],
 				campus,
-				cursus
+				cursusDetails
 			);
 			setInterval(
-				getCampusCalendar,
-				10 * 60 * 1000,
-				client,
-				calendars[campus.id][cursus.id],
+				getCampusEvents,
+				UPDATE_TIMEOUT,
+				calendars[campus.id][cursus],
 				campus,
-				cursus
+				cursusDetails
 			);
 		}, 500 * index);
 	});
+
+	// setTimeout(() => {
+	// 	getCampusExams(calendars[campus.id]["exam"], campus);
+	// 	setInterval(
+	// 		getCampusExams,
+	// 		UPDATE_TIMEOUT,
+	// 		calendars[campus.id]["exam"],
+	// 		campus
+	// 	);
+	// }, 500 * (index + 1));
+	// setTimeout(() => {
+	// 	getCampusTigs(calendars[campus.id]["tig"], campus);
+	// 	setInterval(
+	// 		getCampusTigs,
+	// 		UPDATE_TIMEOUT,
+	// 		calendars[campus.id]["tig"],
+	// 		campus
+	// 	);
+	// }, 500 * (index + 2));
 });
 
 const app = express();
@@ -56,14 +76,42 @@ app.get("/", async (req, res) => {
 	return res.status(200).send("42cal");
 });
 
-app.get("/campus/:campus_id/cursus/:cursus_id", async (req, res) => {
+const router = express.Router();
+
+console.log(process.env.URL_SECRET);
+router.use((req, res, next) => {
+	if (req.query.secret !== process.env.URL_SECRET) return res.status(403);
+	next();
+});
+
+router.get("/campus/:campus_id/tig", async (req, res) => {
+	if (
+		!calendars.hasOwnProperty(req.params.campus_id) ||
+		!calendars[req.params.campus_id].hasOwnProperty("tig")
+	)
+		return res.status(404).send("Calendar does not exist");
+	return calendars[req.params.campus_id]["tig"].serve(res);
+});
+
+router.get("/campus/:campus_id/exams", async (req, res) => {
+	if (
+		!calendars.hasOwnProperty(req.params.campus_id) ||
+		!calendars[req.params.campus_id].hasOwnProperty("exam")
+	)
+		return res.status(404).send("Calendar does not exist");
+	return calendars[req.params.campus_id]["exam"].serve(res);
+});
+
+router.get("/campus/:campus_id/cursus/:cursus_id", async (req, res) => {
 	if (
 		!calendars.hasOwnProperty(req.params.campus_id) ||
 		!calendars[req.params.campus_id].hasOwnProperty(req.params.cursus_id)
 	)
-		return res.status(404).send("Calendar does not exist...");
+		return res.status(404).send("Calendar does not exist");
 	return calendars[req.params.campus_id][req.params.cursus_id].serve(res);
 });
+
+app.use("/", router);
 
 app.listen(3000, () => {
 	console.log("Running on http://localhost:3000");
