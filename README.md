@@ -2,41 +2,13 @@
 
 An iCal API to see the 42 events in a calendar.
 
-## Installation
+## Features
 
-You have to create a new intra app (**Settings > API > REGISTER A NEW APP**). Fill in the form however you like.
+Creates an [iCal](https://en.wikipedia.org/wiki/ICalendar) feed for different resources by campus:
+- events by cursus
+- exams
+- TIG/community services
 
-Create a `.env` file with the following variables:
+## Requirements
 
-```
-CLIENT_ID=
-CLIENT_SECRET=
-```
-
-And fill it with the client credentials.
-
-Then, install the packages and start the server:
-
-```sh
-npm install
-npm start
-```
-
-### Add a campus
-
-In the file `campus.js`, you'll find an array containing all the supported campuses. Uncomment the ones that you'd like to use.
-
-```js
-const campuses = [
-//  ...
-//  { "id": 7, "name": "Fremont" },
-//  { "id": 6, "name": "Chisinau" },
-//  { "id": 5, "name": "Johannesburg" },
-//  { "id": 2, "name": "Cluj" },
-    { "id": 1, "name": "Paris" }
-];
-```
-
-## License
-
-Licensed under MIT License, Copyright 2022 Valentin Furmanek.
+- For the TIG calendar, the app must have a Basic Staff role. You can add it to your app [here](https://admin.intra.42.fr/roles_entities/new). Don't forget to update the secret after the mandatory rotation has occurred.
