@@ -1,22 +1,22 @@
 {
-  "name": "42cal",
-  "version": "1.0.0",
-  "description": "",
-  "main": "index.js",
-  "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1",
-    "start": "node index.js",
-    "dev": "nodemon index.js"
-  },
-  "keywords": [],
-  "author": "",
-  "license": "ISC",
-  "dependencies": {
-    "axios": "^0.24.0",
-    "dotenv": "^11.0.0",
-    "express": "^4.17.2",
-    "ical-generator": "^3.2.0",
-    "nodemon": "^2.0.15",
-    "simple-oauth2": "^4.3.0"
-  }
+	"name": "42cal",
+	"version": "1.0.0",
+	"description": "",
+	"main": "src/index.js",
+	"scripts": {
+		"test": "echo \"Error: no test specified\" && exit 1",
+		"start": "node src/index.js",
+		"dev": "nodemon src/index.js"
+	},
+	"keywords": [],
+	"author": "",
+	"license": "ISC",
+	"dependencies": {
+		"@codam/fast42": "^2.1.6",
+		"dotenv": "^11.0.0",
+		"express": "^4.17.2",
+		"ical-generator": "^3.2.0",
+		"nodemon": "^3.1.0"
+	},
+	"type": "module"
 }

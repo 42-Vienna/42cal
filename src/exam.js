@@ -1,15 +1,12 @@
-const { api } = require("./api");
-
-async function fetchExams(campus_id) {
-	return api.get(`community_services?filter[campus_id]=${campus_id}`);
-}
+import { api } from "./api.js";
 
 function getCampusExams(calendar, campus) {
 	console.log(`Fetching exams of the ${campus.name} campus...`);
-	fetchExams(campus.id)
-		.then((result) => {
+	api.get(`/exams?filter[campus_id]=${campus.id}`)
+		.then((r) => r.json())
+		.then((r) => {
 			calendar.clear();
-			for (const exam of result.data) {
+			for (const exam of r) {
 				let description = "";
 
 				for (const project of exam.projects) {
@@ -25,7 +22,6 @@ function getCampusExams(calendar, campus) {
 					location: exam.location,
 				});
 			}
-			return result;
 		})
 		.catch((error) => {
 			console.error(error);
@@ -34,4 +30,4 @@ function getCampusExams(calendar, campus) {
 	console.log("Done");
 }
 
-module.exports = { getCampusExams };
+export { getCampusExams };
